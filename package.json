@@ -1,0 +1,28 @@
+{
+  "name": "bazarna-store-api",
+  "version": "1.0.0",
+  "description": "The backend API for **Bazarna Store**, an e-commerce platform built with Node.js, Express.js, and MongoDB.",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ahmedtalaat-dev/bazarna-store-api.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/ahmedtalaat-dev/bazarna-store-api/issues"
+  },
+  "homepage": "https://github.com/ahmedtalaat-dev/bazarna-store-api#readme",
+  "dependencies": {
+    "dotenv": "^18.0.8",
+    "express": "^5.3.0",
+    "mongoose": "^9.11.2",
+    "morgan": "^1.12.1",
+    "nodemon": "^3.1.14"
+  }
+}
