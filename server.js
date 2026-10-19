@@ -1,32 +1,47 @@
-const express= require("express");
-const dotenv= require("dotenv");
-const morgan= require("morgan");
-const connectDB= require("./config/database");
+const express = require('express');
+const dotenv = require('dotenv');
+const morgan = require('morgan');
 
-const categoryRoute= require("./routes/categoryRoute");
+dotenv.config({ path: 'config.env' });
+const ApiError = require('./utils/apiError');
+const globalError = require('./middleware/errorMiddleware');
+const dbConnection = require('./config/database');
+const categoryRoute = require('./routes/categoryRoute');
 
-dotenv.config({path: "./config.env"})
+// Connect with db
+dbConnection();
 
-// Database Connection
-connectDB();
-
+// express app
 const app = express();
-const PORT = process.env.PORT || 8000
 
-if(process.env.NODE_ENV == "development")
-{
-    app.use(morgan("dev"));
-    console.log("Development mode")
-}
+// Middlewares
 app.use(express.json());
 
-// Routes
-app.use("/api/categories", categoryRoute);
+if (process.env.NODE_ENV === 'development') {
+  app.use(morgan('dev'));
+  console.log(`mode: ${process.env.NODE_ENV}`);
+}
 
-app.get("/", (req, res) => {
-    res.send("Bazarna API is running");
-})
+// Mount Routes
+app.use('/api/categories', categoryRoute);
 
-app.listen(PORT, () => {
-    console.log(`App is running on port ${PORT}`)
-})
+app.use((req, res, next) => {
+  next(new ApiError(`Can't find this route: ${req.originalUrl}`, 400));
+});
+
+// Global error handling middleware for express
+app.use(globalError);
+
+const PORT = process.env.PORT || 8000;
+const server = app.listen(PORT, () => {
+  console.log(`App running running on port ${PORT}`);
+});
+
+// Handle rejection outside express
+process.on('unhandledRejection', (err) => {
+  console.error(`UnhandledRejection Errors: ${err.name} | ${err.message}`);
+  server.close(() => {
+    console.error(`Shutting down....`);
+    process.exit(1);
+  });
+});
