@@ -14,7 +14,7 @@ const getCategories = asyncHandler(async (req, res) => {
 });
 
 // get specific category
-const getCategoryById = asyncHandler(async (req, res) => {
+const getCategory = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const category = await Category.findById(id);
   if (!category) {
@@ -60,7 +60,7 @@ const deleteCategory = asyncHandler(async (req, res) => {
 
 module.exports = {
   getCategories,
-  getCategoryById,
+  getCategory,
   createCategory,
   updateCategory,
   deleteCategory,
