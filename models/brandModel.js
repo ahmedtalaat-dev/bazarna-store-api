@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-
+// 1- Create Schema
 const brandSchema = new mongoose.Schema(
   {
     name: {
@@ -9,15 +9,28 @@ const brandSchema = new mongoose.Schema(
       minlength: [3, "Too short Brand name"],
       maxlength: [32, "Too long Brand name"],
     },
-
     slug: {
       type: String,
       lowercase: true,
     },
-    
     image: String,
   },
   { timestamps: true },
 );
+
+const setImageURL = (doc) => {
+  if (doc.image) {
+    const imageUrl = `${process.env.BASE_URL}/brands/${doc.image}`;
+    doc.image = imageUrl;
+  }
+};
+
+brandSchema.post("init", (doc) => {
+  setImageURL(doc);
+});
+
+brandSchema.post("save", (doc) => {
+  setImageURL(doc);
+});
 
 module.exports = mongoose.model("Brand", brandSchema);
