@@ -9,18 +9,31 @@ const categorySchema = new mongoose.Schema(
       minlength: [3, "Too short category name"],
       maxlength: [32, "Too long category name"],
     },
-
+    // A and B => shopping.com/a-and-b
     slug: {
       type: String,
       lowercase: true,
     },
-
-    image: {
-      type: String,
-    },
+    image: String,
   },
   { timestamps: true },
 );
 
+const setImageURL = (doc) => {
+  if (doc.image) {
+    const imageUrl = `${process.env.BASE_URL}/categories/${doc.image}`;
+    doc.image = imageUrl;
+  }
+};
+
+categorySchema.post("init", (doc) => {
+  setImageURL(doc);
+});
+
+categorySchema.post("save", (doc) => {
+  setImageURL(doc);
+});
+
 const CategoryModel = mongoose.model("Category", categorySchema);
+
 module.exports = CategoryModel;
