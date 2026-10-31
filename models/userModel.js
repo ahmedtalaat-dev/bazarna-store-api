@@ -39,14 +39,32 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    // child reference (one to many)
+    wishlist: [
+      {
+        type: mongoose.Schema.ObjectId,
+        ref: "Product",
+      },
+    ],
+    addresses: [
+      {
+        id: { type: mongoose.Schema.Types.ObjectId },
+        alias: String,
+        details: String,
+        phone: String,
+        city: String,
+        postalCode: String,
+      },
+    ],
   },
   { timestamps: true },
 );
 
 userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return ;
+  if (!this.isModified("password")) return next();
   // Hashing user password
   this.password = await bcrypt.hash(this.password, 12);
+  next();
 });
 
 const User = mongoose.model("User", userSchema);
