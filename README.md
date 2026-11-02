@@ -34,21 +34,21 @@ A suggested structure for the API:
 ```text
 bazarna-store-api/
 │
-├── config/                  # Database and application configuration
+├── config/
 │
-├── models/                  # Database models and schemas
+├── models/
 │
-├── services/                # Business logic and reusable services
+├── services/
 │
-├── routes/                  # API routes and endpoint definitions
+├── routes/
 │
-├── utils/                   # Shared helper functions and utilities
-│   └── validators/          # Request validation rules and schemas
+├── utils/
+│   └── validators/
 │
-├── .gitignore               # Files and folders excluded from Git
+├── .gitignore
 │
-├── .env                     # Environment variables and secrets
+├── .env
 │
-├── server.js                # Main server entry point
+├── server.js
 │
 └── package.json 
