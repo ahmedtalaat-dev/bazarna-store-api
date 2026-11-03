@@ -1,5 +1,5 @@
 const asyncHandler = require("express-async-handler");
-const { v4: uuidv4 } = require("uuid");
+const { randomUUID } = require("crypto");
 const sharp = require("sharp");
 const bcrypt = require("bcryptjs");
 
@@ -14,40 +14,33 @@ exports.uploadUserImage = uploadSingleImage("profileImg");
 
 // Image processing
 exports.resizeImage = asyncHandler(async (req, res, next) => {
-  const filename = `user-${uuidv4()}-${Date.now()}.jpeg`;
-
-  if (req.file) {
-    await sharp(req.file.buffer)
-      .resize(600, 600)
-      .toFormat("jpeg")
-      .jpeg({ quality: 95 })
-      .toFile(`uploads/users/${filename}`);
-
-    // Save image into our db
-    req.body.profileImg = filename;
+  if (!req.file) {
+    return next();
   }
+
+  const filename = `user-${randomUUID()}-${Date.now()}.jpeg`;
+
+  await sharp(req.file.buffer)
+    .resize(600, 600)
+    .toFormat("jpeg")
+    .jpeg({ quality: 95 })
+    .toFile(`uploads/users/${filename}`);
+
+  req.body.profileImg = filename;
 
   next();
 });
 
-// @desc    Get list of users
-// @route   GET /api/v1/users
-// @access  Private/Admin
+// Get list of users
 exports.getUsers = factory.getAll(User);
 
-// @desc    Get specific user by id
-// @route   GET /api/v1/users/:id
-// @access  Private/Admin
+// Get specific user
 exports.getUser = factory.getOne(User);
 
-// @desc    Create user
-// @route   POST  /api/v1/users
-// @access  Private/Admin
+// Create user
 exports.createUser = factory.createOne(User);
 
-// @desc    Update specific user
-// @route   PUT /api/v1/users/:id
-// @access  Private/Admin
+// Update specific user
 exports.updateUser = asyncHandler(async (req, res, next) => {
   const document = await User.findByIdAndUpdate(
     req.params.id,
@@ -61,12 +54,14 @@ exports.updateUser = asyncHandler(async (req, res, next) => {
     },
     {
       new: true,
+      runValidators: true,
     },
   );
 
   if (!document) {
     return next(new ApiError(`No document for this id ${req.params.id}`, 404));
   }
+
   res.status(200).json({ data: document });
 });
 
@@ -85,27 +80,21 @@ exports.changeUserPassword = asyncHandler(async (req, res, next) => {
   if (!document) {
     return next(new ApiError(`No document for this id ${req.params.id}`, 404));
   }
+
   res.status(200).json({ data: document });
 });
 
-// @desc    Delete specific user
-// @route   DELETE /api/v1/users/:id
-// @access  Private/Admin
+// Delete specific user
 exports.deleteUser = factory.deleteOne(User);
 
-// @desc    Get Logged user data
-// @route   GET /api/v1/users/getMe
-// @access  Private/Protect
+// Get logged user data
 exports.getLoggedUserData = asyncHandler(async (req, res, next) => {
   req.params.id = req.user._id;
   next();
 });
 
-// @desc    Update logged user password
-// @route   PUT /api/v1/users/updateMyPassword
-// @access  Private/Protect
+// Update logged user password
 exports.updateLoggedUserPassword = asyncHandler(async (req, res, next) => {
-  // 1) Update user password based user payload (req.user._id)
   const user = await User.findByIdAndUpdate(
     req.user._id,
     {
@@ -117,15 +106,16 @@ exports.updateLoggedUserPassword = asyncHandler(async (req, res, next) => {
     },
   );
 
-  // 2) Generate token
+  if (!user) {
+    return next(new ApiError("User not found", 404));
+  }
+
   const token = createToken(user._id);
 
   res.status(200).json({ data: user, token });
 });
 
-// @desc    Update logged user data (without password, role)
-// @route   PUT /api/v1/users/updateMe
-// @access  Private/Protect
+// Update logged user data
 exports.updateLoggedUserData = asyncHandler(async (req, res, next) => {
   const updatedUser = await User.findByIdAndUpdate(
     req.user._id,
@@ -134,15 +124,20 @@ exports.updateLoggedUserData = asyncHandler(async (req, res, next) => {
       email: req.body.email,
       phone: req.body.phone,
     },
-    { new: true },
+    {
+      new: true,
+      runValidators: true,
+    },
   );
+
+  if (!updatedUser) {
+    return next(new ApiError("User not found", 404));
+  }
 
   res.status(200).json({ data: updatedUser });
 });
 
-// @desc    Deactivate logged user
-// @route   DELETE /api/v1/users/deleteMe
-// @access  Private/Protect
+// Deactivate logged user
 exports.deleteLoggedUserData = asyncHandler(async (req, res, next) => {
   await User.findByIdAndUpdate(req.user._id, { active: false });
 
