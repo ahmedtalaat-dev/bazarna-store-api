@@ -1,5 +1,6 @@
+
 const sharp = require('sharp');
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID } = require('crypto');
 const asyncHandler = require('express-async-handler');
 
 const factory = require('./handlersFactory');
@@ -11,7 +12,7 @@ exports.uploadCategoryImage = uploadSingleImage('image');
 
 // Image processing
 exports.resizeImage = asyncHandler(async (req, res, next) => {
-  const filename = `category-${uuidv4()}-${Date.now()}.jpeg`;
+  const filename = `category-${randomUUID()}-${Date.now()}.jpeg`;
 
   if (req.file) {
     await sharp(req.file.buffer)
@@ -20,34 +21,23 @@ exports.resizeImage = asyncHandler(async (req, res, next) => {
       .jpeg({ quality: 95 })
       .toFile(`uploads/categories/${filename}`);
 
-    // Save image into our db
     req.body.image = filename;
   }
 
   next();
 });
 
-// @desc    Get list of categories
-// @route   GET /api/v1/categories
-// @access  Public
+// Get list of categories
 exports.getCategories = factory.getAll(Category);
 
-// @desc    Get specific category by id
-// @route   GET /api/v1/categories/:id
-// @access  Public
+// Get specific category
 exports.getCategory = factory.getOne(Category);
 
-// @desc    Create category
-// @route   POST  /api/v1/categories
-// @access  Private/Admin-Manager
+// Create category
 exports.createCategory = factory.createOne(Category);
 
-// @desc    Update specific category
-// @route   PUT /api/v1/categories/:id
-// @access  Private/Admin-Manager
+// Update category
 exports.updateCategory = factory.updateOne(Category);
 
-// @desc    Delete specific category
-// @route   DELETE /api/v1/categories/:id
-// @access  Private/Admin
+// Delete category
 exports.deleteCategory = factory.deleteOne(Category);
