@@ -3,69 +3,74 @@ const path = require("path");
 const express = require("express");
 const dotenv = require("dotenv");
 const morgan = require("morgan");
+const cors = require("cors");
+const compression = require("compression");
 
 dotenv.config({ path: "config.env" });
+
 const ApiError = require("./utils/apiError");
 const globalError = require("./middleware/errorMiddleware");
 const dbConnection = require("./config/database");
 
-const categoryRoute = require("./routes/categoryRoute");
-const subCategoryRoute = require("./routes/subCategoryRoute");
-const brandRoute = require("./routes/brandRoute");
-const productRoute = require("./routes/productRoute");
-const userRoute = require("./routes/userRoute");
-const authRoute = require("./routes/authRoute");
-const reviewRoute = require("./routes/reviewRoute");
-const wishlistRoute = require("./routes/wishlistRoute");
-const addressRoute = require("./routes/addressRoute");
-const couponRoute = require("./routes/couponRoute");
-const cartRoute = require("./routes/cartRoute");
+// Routes
+const mountRoutes = require("./routes");
 
-// Connect with db
+// Connect with database
 dbConnection();
 
-// express app
+// Express app
 const app = express();
+
+// Enable other domains to access your application
+app.use(cors());
+app.options("/{*splat}", cors());
+
+// Compress all responses
+app.use(compression());
 
 // Middlewares
 app.use(express.json());
+
 app.use(express.static(path.join(__dirname, "uploads")));
 
+// Development mode
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
   console.log(`mode: ${process.env.NODE_ENV}`);
 }
 
-// Mount Routes
-app.use("/api/categories", categoryRoute);
-app.use("/api/subcategories", subCategoryRoute);
-app.use("/api/brands", brandRoute);
-app.use("/api/products", productRoute);
-app.use("/api/users", userRoute);
-app.use("/api/auth", authRoute);
-app.use("/api/reviews", reviewRoute);
-app.use("/api/wishlist", wishlistRoute);
-app.use("/api/addresses", addressRoute);
-app.use("/api/coupons", couponRoute);
-app.use("/api/cart", cartRoute);
+// Welcome route
+app.get("/", (req, res) => {
+  res.status(200).json({
+    status: "success",
+    message: "Bazarna Store API is running 🚀",
+  });
+});
 
+// Mount Routes
+mountRoutes(app);
+
+// Handle undefined routes
 app.use((req, res, next) => {
   next(new ApiError(`Can't find this route: ${req.originalUrl}`, 400));
 });
 
-// Global error handling middleware for express
+// Global error handling middleware
 app.use(globalError);
 
+// Start server
 const PORT = process.env.PORT || 8000;
+
 const server = app.listen(PORT, () => {
-  console.log(`App running running on port ${PORT}`);
+  console.log(`App running on port ${PORT}`);
 });
 
-// Handle rejection outside express
+// Handle unhandled promise rejections
 process.on("unhandledRejection", (err) => {
   console.error(`UnhandledRejection Errors: ${err.name} | ${err.message}`);
+
   server.close(() => {
-    console.error(`Shutting down....`);
+    console.error("Shutting down....");
     process.exit(1);
   });
 });
