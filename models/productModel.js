@@ -62,7 +62,6 @@ const productSchema = new mongoose.Schema(
       type: Number,
       min: [1, "Rating must be above or equal 1.0"],
       max: [5, "Rating must be below or equal 5.0"],
-      // set: (val) => Math.round(val * 10) / 10, // 3.3333 * 10 => 33.333 => 33 => 3.3
     },
     ratingsQuantity: {
       type: Number,
@@ -71,7 +70,6 @@ const productSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-    // to enable virtual populate
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
   },
@@ -83,13 +81,11 @@ productSchema.virtual("reviews", {
   localField: "_id",
 });
 
-// Mongoose query middleware
-productSchema.pre(/^find/, function (next) {
+productSchema.pre(/^find/, function () {
   this.populate({
     path: "category",
     select: "name -_id",
   });
-  next();
 });
 
 const setImageURL = (doc) => {
@@ -106,14 +102,14 @@ const setImageURL = (doc) => {
     doc.images = imagesList;
   }
 };
-// findOne, findAll and update
+
 productSchema.post("init", (doc) => {
   setImageURL(doc);
 });
 
-// create
 productSchema.post("save", (doc) => {
   setImageURL(doc);
 });
 
-module.exports = mongoose.model("Product", productSchema);
+const Product = mongoose.model("Product", productSchema);
+module.exports = Product;

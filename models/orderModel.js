@@ -55,7 +55,7 @@ const orderSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-orderSchema.pre(/^find/, function (next) {
+orderSchema.pre(/^find/, function () {
   this.populate({
     path: "user",
     select: "name profileImg email phone",
@@ -63,11 +63,7 @@ orderSchema.pre(/^find/, function (next) {
     path: "cartItems.product",
     select: "title imageCover ",
   });
-
-  next();
 });
 
-module.exports = mongoose.model("Order", orderSchema);
-
-// In@in2016
-//progahmedelsayed@gmail.com
+const Order = mongoose.model("Order", orderSchema);
+module.exports = Order;

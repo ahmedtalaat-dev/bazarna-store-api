@@ -39,7 +39,6 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
-    // child reference (one to many)
     wishlist: [
       {
         type: mongoose.Schema.ObjectId,
@@ -60,13 +59,10 @@ const userSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
-  // Hashing user password
+userSchema.pre("save", async function () {
+  if (!this.isModified("password")) return;
   this.password = await bcrypt.hash(this.password, 12);
-  next();
 });
 
 const User = mongoose.model("User", userSchema);
-
 module.exports = User;

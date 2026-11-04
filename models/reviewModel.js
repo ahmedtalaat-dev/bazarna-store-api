@@ -17,7 +17,6 @@ const reviewSchema = new mongoose.Schema(
       ref: "User",
       required: [true, "Review must belong to user"],
     },
-    // parent reference (one to many)
     product: {
       type: mongoose.Schema.ObjectId,
       ref: "Product",
@@ -27,9 +26,8 @@ const reviewSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-reviewSchema.pre(/^find/, function (next) {
+reviewSchema.pre(/^find/, function () {
   this.populate({ path: "user", select: "name" });
-  next();
 });
 
 reviewSchema.statics.calcAverageRatingsAndQuantity = async function (
@@ -40,6 +38,7 @@ reviewSchema.statics.calcAverageRatingsAndQuantity = async function (
     {
       $match: { product: productId },
     },
+
     // Stage 2: Grouping reviews based on productID and calc avgRatings, ratingsQuantity
     {
       $group: {
@@ -50,7 +49,6 @@ reviewSchema.statics.calcAverageRatingsAndQuantity = async function (
     },
   ]);
 
-  // console.log(result);
   if (result.length > 0) {
     await Product.findByIdAndUpdate(productId, {
       ratingsAverage: result[0].avgRatings,
@@ -72,4 +70,5 @@ reviewSchema.post("remove", async function () {
   await this.constructor.calcAverageRatingsAndQuantity(this.product);
 });
 
-module.exports = mongoose.model("Review", reviewSchema);
+const Review = mongoose.model("Review", reviewSchema);
+module.exports = Review;
