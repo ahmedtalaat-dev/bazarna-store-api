@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-// 1- Create Schema
+
 const brandSchema = new mongoose.Schema(
   {
     name: {
@@ -33,4 +33,5 @@ brandSchema.post("save", (doc) => {
   setImageURL(doc);
 });
 
-module.exports = mongoose.model("Brand", brandSchema);
+const Brand = mongoose.model("Brand", brandSchema);
+module.exports = Brand;
