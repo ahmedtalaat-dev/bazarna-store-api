@@ -1,42 +1,39 @@
 const sharp = require("sharp");
-const { randomUUID } = require("crypto");
 const asyncHandler = require("express-async-handler");
 
 const factory = require("./handlersFactory");
 const { uploadSingleImage } = require("../middleware/uploadImageMiddleware");
+const uploadToCloudinary = require("../utils/uploadToCloudinary");
 const Category = require("../models/categoryModel");
 
 // Upload single image
 exports.uploadCategoryImage = uploadSingleImage("image");
 
-// Image processing
+// Resize image and upload to Cloudinary
 exports.resizeImage = asyncHandler(async (req, res, next) => {
-  const filename = `category-${randomUUID()}-${Date.now()}.jpeg`;
-
-  if (req.file) {
-    await sharp(req.file.buffer)
-      .resize(600, 600)
-      .toFormat("jpeg")
-      .jpeg({ quality: 95 })
-      .toFile(`uploads/categories/${filename}`);
-
-    req.body.image = filename;
+  if (!req.file) {
+    return next();
   }
+
+  const buffer = await sharp(req.file.buffer)
+    .resize(600, 600)
+    .toFormat("jpeg")
+    .jpeg({ quality: 95 })
+    .toBuffer();
+
+  const result = await uploadToCloudinary(buffer, {
+    folder: "bazarna/categories",
+  });
+
+  // Save the Cloudinary URL in MongoDB
+  req.body.image = result.secure_url;
 
   next();
 });
 
-// Get list of categories
+// CRUD operations
 exports.getCategories = factory.getAll(Category);
-
-// Get specific category
 exports.getCategory = factory.getOne(Category);
-
-// Create category
 exports.createCategory = factory.createOne(Category);
-
-// Update category
 exports.updateCategory = factory.updateOne(Category);
-
-// Delete category
 exports.deleteCategory = factory.deleteOne(Category);
