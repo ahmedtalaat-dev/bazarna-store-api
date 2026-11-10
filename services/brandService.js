@@ -1,29 +1,32 @@
 const asyncHandler = require("express-async-handler");
-const { randomUUID } = require("crypto");
 const sharp = require("sharp");
 
 const factory = require("./handlersFactory");
 const { uploadSingleImage } = require("../middleware/uploadImageMiddleware");
+const uploadToCloudinary = require("../utils/uploadToCloudinary");
 const Brand = require("../models/brandModel");
 
 // Upload single image
 exports.uploadBrandImage = uploadSingleImage("image");
 
-// Image processing
+// Resize image and upload to Cloudinary
 exports.resizeImage = asyncHandler(async (req, res, next) => {
   if (!req.file) {
     return next();
   }
 
-  const filename = `brand-${randomUUID()}-${Date.now()}.jpeg`;
-
-  await sharp(req.file.buffer)
+  const buffer = await sharp(req.file.buffer)
     .resize(600, 600)
     .toFormat("jpeg")
     .jpeg({ quality: 95 })
-    .toFile(`uploads/brands/${filename}`);
+    .toBuffer();
 
-  req.body.image = filename;
+  const result = await uploadToCloudinary(buffer, {
+    folder: "bazarna/brands",
+  });
+
+  // Save the Cloudinary URL in MongoDB
+  req.body.image = result.secure_url;
 
   next();
 });
