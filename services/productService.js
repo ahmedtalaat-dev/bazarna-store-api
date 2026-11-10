@@ -1,51 +1,47 @@
 const asyncHandler = require("express-async-handler");
-const { randomUUID } = require("crypto");
 const sharp = require("sharp");
 
 const { uploadMixOfImages } = require("../middleware/uploadImageMiddleware");
+const uploadToCloudinary = require("../utils/uploadToCloudinary");
 const factory = require("./handlersFactory");
 const Product = require("../models/productModel");
 
+// Upload product images
 exports.uploadProductImages = uploadMixOfImages([
-  {
-    name: "imageCover",
-    maxCount: 1,
-  },
-  {
-    name: "images",
-    maxCount: 5,
-  },
+  { name: "imageCover", maxCount: 1 },
+  { name: "images", maxCount: 5 },
 ]);
 
+// Resize images and upload to Cloudinary
 exports.resizeProductImages = asyncHandler(async (req, res, next) => {
-  // 1- Image processing for imageCover
   if (req.files?.imageCover) {
-    const imageCoverFileName = `product-${randomUUID()}-${Date.now()}-cover.jpeg`;
-
-    await sharp(req.files.imageCover[0].buffer)
+    const buffer = await sharp(req.files.imageCover[0].buffer)
       .resize(2000, 1333)
       .toFormat("jpeg")
       .jpeg({ quality: 95 })
-      .toFile(`uploads/products/${imageCoverFileName}`);
+      .toBuffer();
 
-    req.body.imageCover = imageCoverFileName;
+    const result = await uploadToCloudinary(buffer, {
+      folder: "bazarna/products",
+    });
+
+    req.body.imageCover = result.secure_url;
   }
 
-  // 2- Image processing for images
   if (req.files?.images) {
-    req.body.images = [];
-
     const images = await Promise.all(
-      req.files.images.map(async (img, index) => {
-        const imageName = `product-${randomUUID()}-${Date.now()}-${index + 1}.jpeg`;
-
-        await sharp(img.buffer)
+      req.files.images.map(async (img) => {
+        const buffer = await sharp(img.buffer)
           .resize(2000, 1333)
           .toFormat("jpeg")
           .jpeg({ quality: 95 })
-          .toFile(`uploads/products/${imageName}`);
+          .toBuffer();
 
-        return imageName;
+        const result = await uploadToCloudinary(buffer, {
+          folder: "bazarna/products",
+        });
+
+        return result.secure_url;
       }),
     );
 
@@ -55,7 +51,6 @@ exports.resizeProductImages = asyncHandler(async (req, res, next) => {
   next();
 });
 
-// CRUD operations
 exports.getProducts = factory.getAll(Product, "Products");
 exports.getProduct = factory.getOne(Product, "reviews");
 exports.createProduct = factory.createOne(Product);
